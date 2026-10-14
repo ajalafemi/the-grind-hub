@@ -1,2 +1,1 @@
-# the-grind-hub
-The Grind - Universal downloader + problem solving tools. Download from YouTube, TikTok, IG, X. Built with yt-dlp on Vercel.
+The Grind Hub - Tools That Fuel The Grind. Background Remover, Video Resizer, Enhancer to 720/1080. Built for creators.
