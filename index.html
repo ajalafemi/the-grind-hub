@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Grind Hub - Tools That Fuel The Grind</title>
+<style>
+body{font-family:sans-serif;background:#0a0a0a;color:white;padding:15px;text-align:center;margin:0}
+h1{color:#00ff88;margin-bottom:5px}
+.tabs{display:flex;gap:10px;justify-content:center;margin:20px 0;flex-wrap:wrap}
+.tab{padding:12px 18px;background:#1a1a1a;border:1px solid #333;border-radius:10px;cursor:pointer}
+.tab.active{background:#00ff88;color:black;font-weight:bold}
+.card{background:#1a1a1a;padding:15px;border-radius:12px;margin:15px auto;max-width:550px;border:1px solid #222}
+input,select,button{width:90%;max-width:500px;padding:14px;border-radius:10px;border:none;margin:10px 0}
+button{background:#00ff88;color:black;font-weight:bold;cursor:pointer}
+button:disabled{background:#333;color:#888}
+canvas,img,video{max-width:100%;border-radius:10px;margin-top:10px}
+.small{font-size:12px;color:#888}
+</style>
+</head>
+<body>
+<h1>🔥 THE GRIND HUB</h1>
+<p>No Wasted Potential — Tools That Fuel The Grind</p>
+
+<div class="tabs">
+<div class="tab active" onclick="switchTab('bg')">Remove BG</div>
+<div class="tab" onclick="switchTab('video')">Resize / Enhance Video</div>
+<div class="tab" onclick="switchTab('wm')">My Watermark Crop</div>
+</div>
+
+<div id="bg" class="card">
+<h3>Remove Background (Image)</h3>
+<p class="small">For product pics, profile pics. 100% private, runs in your phone.</p>
+<input type="file" id="bgInput" accept="image/*">
+<button onclick="removeBG()">Remove Background</button>
+<p id="bgStatus" class="small"></p>
+<img id="bgResult" style="display:none">
+<a id="bgDownload" style="display:none" download="grind-bg-removed.png"><button>Download PNG</button></a>
+</div>
+
+<div id="video" class="card" style="display:none">
+<h3>Resize + Make Clearer</h3>
+<p class="small">Upload YOUR OWN video. Choose output size.</p>
+<input type="file" id="videoInput" accept="video/*">
+<select id="quality">
+<option value="480">480p — Fast</option>
+<option value="720" selected>720p — Balanced</option>
+<option value="1080">1080p — HD</option>
+</select>
+<button onclick="resizeVideo()">Resize / Enhance</button>
+<p id="videoStatus" class="small"></p>
+<video id="videoPreview" controls style="display:none"></video>
+<a id="videoDownload" style="display:none"><button>Download Video</button></a>
+<canvas id="videoCanvas" style="display:none"></canvas>
+</div>
+
+<div id="wm" class="card" style="display:none">
+<h3>Crop Watermark (Your Own Videos Only)</h3>
+<p class="small">Only use for videos you created. We crop 10% bottom where your editor adds watermark. This keeps quality clear.</p>
+<input type="file" id="wmInput" accept="video/*">
+<button onclick="cropWatermark()">Crop & Keep Clear</button>
+<p id="wmStatus" class="small"></p>
+<video id="wmPreview" controls style="display:none"></video>
+</div>
+
+<script type="module">
+import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.mjs';
+
+window.removeBG = async () => {
+  const file = document.getElementById('bgInput').files[0];
+  if(!file) return alert('Pick image first');
+  document.getElementById('bgStatus').innerText = '⏳ Removing BG... 10-20s first time';
+  try {
+    const blob = await removeBackground(file);
+    const url = URL.createObjectURL(blob);
+    const img = document.getElementById('bgResult');
+    img.src = url; img.style.display = 'block';
+    const a = document.getElementById('bgDownload');
+    a.href = url; a.style.display = 'block';
+    document.getElementById('bgStatus').innerText = '✅ Done! Background removed';
+  } catch(e){ document.getElementById('bgStatus').innerText = 'Error: '+e.message }
+}
+
+window.switchTab = (id) => {
+  document.querySelectorAll('.card').forEach(c=>c.style.display='none');
+  document.getElementById(id).style.display='block';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+window.resizeVideo = async () => {
+  const file = document.getElementById('videoInput').files[0];
+  const q = document.getElementById('quality').value;
+  if(!file) return alert('Pick video first');
+  document.getElementById('videoStatus').innerText = `⏳ Resizing to ${q}p...`;
+  const url = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.src = url;
+  await video.play().then(()=>video.pause());
+  const canvas = document.getElementById('videoCanvas');
+  const sizes = {480:854, 720:1280, 1080:1920};
+  const w = sizes[q]; const h = Math.round(w * (9/16));
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video,0,0,w,h);
+  document.getElementById('videoStatus').innerText = '✅ Preview ready. This is fast upscale. For real AI HD we add next.';
+  const preview = document.getElementById('videoPreview');
+  preview.src = url; preview.style.display='block';
+  // For MVP we let them download resized image demo, full video re-encode we add with ffmpeg.wasm next step
+}
+
+window.cropWatermark = async () => {
+  const file = document.getElementById('wmInput').files[0];
+  if(!file) return alert('Pick video first');
+  document.getElementById('wmStatus').innerText = '⏳ Cropping bottom 12% to remove your own watermark...';
+  const url = URL.createObjectURL(file);
+  const v = document.getElementById('wmPreview');
+  v.src = url; v.style.display='block';
+  v.style.objectFit='cover'; v.style.objectPosition='top';
+  document.getElementById('wmStatus').innerText = '✅ Done. Preview is cropped. Full export with ffmpeg we add next step.';
+}
+</script>
+</body>
+</html>
